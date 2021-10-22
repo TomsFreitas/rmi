@@ -84,16 +84,16 @@ class MyRob(CRobLinkAngs):
         left_id = 1
         right_id = 2
         back_id = 3
-        if self.average_center > 0.20 \
-                or self.average_left > 0.20 \
-                or self.average_right > 0.20 \
-                or self.average_back > 0.20:
+        if self.average_center < 0.20 \
+                or self.average_left < 0.20 \
+                or self.average_right < 0.20 \
+                or self.average_back < 0.20:
             print('Rotate right')
             self.driveMotors(+0.2, -0.2)
-        elif self.average_left > 0.37:
+        elif self.average_left < 0.37:
             print('Rotate slowly right')
             self.driveMotors(0.1, 0.0)
-        elif self.average_right > 0.37:
+        elif self.average_right < 0.37:
             print('Rotate slowly left')
             self.driveMotors(0.0, 0.1)
         else:
