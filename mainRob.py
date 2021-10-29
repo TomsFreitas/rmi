@@ -12,7 +12,7 @@ CELLCOLS = 14
 class MyRob(CRobLinkAngs):
     def __init__(self, rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
-        self.sensor_raw = collections.deque(maxlen=10)
+        self.current_measures = []
 
     # In this map the center of cell (i,j), (i in 0..6, j in 0..13) is mapped to labMap[i*2][j*2].
     # to know if there is a wall on top of cell(i,j) (i in 0..5), check if the value of labMap[i*2+1][j*2] is space or not
@@ -33,18 +33,8 @@ class MyRob(CRobLinkAngs):
 
         while True:
             self.readSensors()
-            self.sensor_raw.append([1 / self.measures.irSensor[0], 1 / self.measures.irSensor[1],
-                                    1 / self.measures.irSensor[2], 1 / self.measures.irSensor[3]])
-
-            center_id = 0
-            left_id = 1
-            right_id = 2
-            back_id = 3
-
-            self.average_center = sum([x[center_id] for x in self.sensor_raw])/len(self.sensor_raw)
-            self.average_left = sum([x[left_id] for x in self.sensor_raw]) / len(self.sensor_raw)
-            self.average_right = sum([x[right_id] for x in self.sensor_raw]) / len(self.sensor_raw)
-            self.average_back = sum([x[back_id] for x in self.sensor_raw]) / len(self.sensor_raw)
+            self.current_measures = [self.measures.irSensor[0], self.measures.irSensor[1],
+                                     self.measures.irSensor[2], self.measures.irSensor[3]]
 
             if self.measures.endLed:
                 print(self.rob_name + " exiting")
@@ -80,25 +70,27 @@ class MyRob(CRobLinkAngs):
                 self.wander()
 
     def wander(self):
-        center_id = 0
-        left_id = 1
-        right_id = 2
-        back_id = 3
-        if self.average_center < 0.20 \
-                or self.average_left < 0.20 \
-                or self.average_right < 0.20 \
-                or self.average_back < 0.20:
-            print('Rotate right')
-            self.driveMotors(+0.2, -0.2)
-        elif self.average_left < 0.37:
-            print('Rotate slowly right')
-            self.driveMotors(0.1, 0.0)
-        elif self.average_right < 0.37:
-            print('Rotate slowly left')
-            self.driveMotors(0.0, 0.1)
-        else:
-            print('Go')
-            self.driveMotors(0.1, 0.1)
+        center = self.current_measures[0]
+        left = self.current_measures[1]
+        right = self.current_measures[2]
+        back = self.current_measures[3]
+        print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
+
+        #First iteration
+        # if center > 4 or left > 4 or right > 4:
+        #     self.driveMotors(-0.1, +0.1)
+        #     print("First IF")
+        # elif left > 0.7:
+        #     print("Second IF")
+        #     self.driveMotors(0.2, 0.0)
+        # elif right > 0.7:
+        #     print("third IF")
+        #     self.driveMotors(0.0, 0.2)
+        # else:
+        #     self.driveMotors(0.2,0.2)
+
+
+
 
 
 class Map():
