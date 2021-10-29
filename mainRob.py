@@ -93,6 +93,8 @@ class MyRob(CRobLinkAngs):
 
 
 
+
+
 class Map():
     def __init__(self, filename):
         tree = ET.parse(filename)
