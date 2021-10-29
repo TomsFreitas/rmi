@@ -76,7 +76,7 @@ class MyRob(CRobLinkAngs):
         back = self.current_measures[3]
         print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
 
-        #First iteration
+        # First iteration
         # if center > 4 or left > 4 or right > 4:
         #     self.driveMotors(-0.1, +0.1)
         #     print("First IF")
@@ -89,10 +89,21 @@ class MyRob(CRobLinkAngs):
         # else:
         #     self.driveMotors(0.2,0.2)
 
-
-
-
-
+        if right > 2.5 or left > 2.5:
+            print("third if")
+            if left > right:
+                self.driveMotors(0.04*left,-0.01*right)
+            else:
+                self.driveMotors(-0.01*left, 0.04*right)
+        elif center > 1.7 and right > 1.7:
+            self.driveMotors(-0.2, 0.2)
+            print("first if")
+        elif center > 1.7 and left > 1.7:
+            print("second if")
+            self.driveMotors(0.2, -0.2)
+        else:
+            print("else")
+            self.driveMotors(0.5, 0.5)
 
 
 class Map():
