@@ -1,3 +1,4 @@
+import math
 import sys
 from croblink import *
 from math import *
@@ -13,6 +14,11 @@ class MyRob(CRobLinkAngs):
     def __init__(self, rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
         self.current_measures = []
+        self.rotation_speed = 0.1
+        self.linear_speed = 0.0
+        self.rotation_speed_base = 0.0
+        self.linear_speed_base = 0.1
+        self.rotation = 0
 
     # In this map the center of cell (i,j), (i in 0..6, j in 0..13) is mapped to labMap[i*2][j*2].
     # to know if there is a wall on top of cell(i,j) (i in 0..5), check if the value of labMap[i*2+1][j*2] is space or not
@@ -88,22 +94,52 @@ class MyRob(CRobLinkAngs):
         #     self.driveMotors(0.0, 0.2)
         # else:
         #     self.driveMotors(0.2,0.2)
+        # SECOND ITERATION
+        # if center > 2 and right > 2:
+        #     self.driveMotors(-0.1, 0.2)
+        #     print("first if")
+        # elif center > 2 and left > 2:
+        #     print("second if")
+        #     self.driveMotors(0.2, -0.1)
+        # elif right > 4 or left > 4:
+        #     print("third if")
+        #     if left > right:
+        #         self.driveMotors(left, 0)
+        #     else:
+        #         self.driveMotors(0, right)
+        # else:
+        #     print("else")
+        #     self.driveMotors(0.5, 0.5)
 
-        if right > 2.5 or left > 2.5:
-            print("third if")
-            if left > right:
-                self.driveMotors(0.04*left,-0.01*right)
+        #if center < 4 and right < 2.1 and left < 2.1:
+            #self.driveMotors(0.5,0.5)
+            #print("Driving forward")
+        #else:
+
+        if center > 1.2:
+            print("Center wall close")
+            if left < right:
+                #print("Right wall closer to me")
+                #print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
+                self.driveMotors(-0.3*center, 1.2*right)
             else:
-                self.driveMotors(-0.01*left, 0.04*right)
-        elif center > 1.7 and right > 1.7:
-            self.driveMotors(-0.2, 0.2)
-            print("first if")
-        elif center > 1.7 and left > 1.7:
-            print("second if")
-            self.driveMotors(0.2, -0.2)
+                #print("Left wall closer to me")
+                #print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
+                self.driveMotors(1.2*left, -0.3*center)
+        elif left > 3:
+            print("Left wall close")
+            desvio = left-2.15
+            self.driveMotors(3*desvio+0.6*center, 0.1*right)
+        elif right > 3:
+            print("Right wall close")
+            desvio = right-2.15
+            self.driveMotors(0.1*left,3*desvio+0.6*center)
         else:
-            print("else")
-            self.driveMotors(0.5, 0.5)
+            self.driveMotors(0.5,0.5)
+
+
+
+
 
 
 class Map():
