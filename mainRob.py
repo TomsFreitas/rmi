@@ -82,36 +82,33 @@ class MyRob(CRobLinkAngs):
         back = self.current_measures[3]
         print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
 
-        CENTER_CLOSE_WALL_HARD_TURN = -0.02
-        CENTER_CLOSE_WALL_NORMAL_TURN = 4
-        KEEPING_CENTER_COEFFICIENT = 10
-        LINEAR_CENTER_SPEED = 10
-        ROTATIONAL_SPEED = 0.1
-        DISTANCE_TO_CLOSE_CORNER = 1
-        KEEP_CENTER_DISTANCE = 0.9
 
-        if DISTANCE_TO_CLOSE_CORNER > 1:
+        CENTER_CLOSE_WALL_HARD_TURN = -0.02
+        CENTER_CLOSE_WALL_NORMAL_TURN = 3.5
+        KEEPING_CENTER_COEFFICIENT = 10
+        LINEAR_CENTER_SPEED = 3
+        ROTATIONAL_SPEED = 0.1
+
+        if center > 1:
             print("Center wall close")
             if left < right:
-                # print("Right wall closer to me") print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {
-                # }\nAVERAGE BACK {}".format(center, left, right, back))
+                # print("Right wall closer to me")
+                # print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
                 self.driveMotors(CENTER_CLOSE_WALL_HARD_TURN * center, CENTER_CLOSE_WALL_NORMAL_TURN * left + center)
             else:
-                # print("Left wall closer to me") print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {
-                # }\nAVERAGE BACK {}".format(center, left, right, back))
+                # print("Left wall closer to me")
+                # print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
                 self.driveMotors(CENTER_CLOSE_WALL_NORMAL_TURN * right + center, CENTER_CLOSE_WALL_HARD_TURN * center)
             return
-        elif left > KEEP_CENTER_DISTANCE:
+        elif left > 2.9:
             print("Left wall close")
             desvio = left - 2.15
-            self.driveMotors(KEEPING_CENTER_COEFFICIENT * desvio + LINEAR_CENTER_SPEED * center,
-                             ROTATIONAL_SPEED * right)
+            self.driveMotors(KEEPING_CENTER_COEFFICIENT * desvio + LINEAR_CENTER_SPEED * center, ROTATIONAL_SPEED * right)
             return
-        elif right > KEEP_CENTER_DISTANCE:
+        elif right > 2.9:
             print("Right wall close")
             desvio = right - 2.15
-            self.driveMotors(ROTATIONAL_SPEED * left,
-                             KEEPING_CENTER_COEFFICIENT * desvio + LINEAR_CENTER_SPEED * center)
+            self.driveMotors(ROTATIONAL_SPEED * left, KEEPING_CENTER_COEFFICIENT * desvio + LINEAR_CENTER_SPEED * center)
             return
         else:
             self.driveMotors(1, 1)
