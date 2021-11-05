@@ -82,64 +82,30 @@ class MyRob(CRobLinkAngs):
         back = self.current_measures[3]
         print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
 
-        # First iteration
-        # if center > 4 or left > 4 or right > 4:
-        #     self.driveMotors(-0.1, +0.1)
-        #     print("First IF")
-        # elif left > 0.7:
-        #     print("Second IF")
-        #     self.driveMotors(0.2, 0.0)
-        # elif right > 0.7:
-        #     print("third IF")
-        #     self.driveMotors(0.0, 0.2)
-        # else:
-        #     self.driveMotors(0.2,0.2)
-        # SECOND ITERATION
-        # if center > 2 and right > 2:
-        #     self.driveMotors(-0.1, 0.2)
-        #     print("first if")
-        # elif center > 2 and left > 2:
-        #     print("second if")
-        #     self.driveMotors(0.2, -0.1)
-        # elif right > 4 or left > 4:
-        #     print("third if")
-        #     if left > right:
-        #         self.driveMotors(left, 0)
-        #     else:
-        #         self.driveMotors(0, right)
-        # else:
-        #     print("else")
-        #     self.driveMotors(0.5, 0.5)
-
-        #if center < 4 and right < 2.1 and left < 2.1:
-            #self.driveMotors(0.5,0.5)
-            #print("Driving forward")
-        #else:
-
-        if center > 1.2:
+        if center > .9:
             print("Center wall close")
             if left < right:
-                #print("Right wall closer to me")
-                #print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
-                self.driveMotors(-0.3*center, 1.2*right)
+                # print("Right wall closer to me")
+                # print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
+                self.driveMotors(-0.02 * center, 3.5 * left + center)
             else:
-                #print("Left wall closer to me")
-                #print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
-                self.driveMotors(1.2*left, -0.3*center)
-        elif left > 3:
+                # print("Left wall closer to me")
+                # print("AVERAGE CENTER {}\nAVERAGE LEFT {}\nAVERAGE RIGHT {}\nAVERAGE BACK {}".format(center, left, right, back))
+                self.driveMotors(3.5 * right + center, -0.02 * center)
+            return
+        elif left > 2.9:
             print("Left wall close")
-            desvio = left-2.15
-            self.driveMotors(3*desvio+0.6*center, 0.1*right)
-        elif right > 3:
+            desvio = left - 2.15
+            self.driveMotors(4 * desvio + 1 * center, 0.1 * right)
+            return
+        elif right > 2.9:
             print("Right wall close")
-            desvio = right-2.15
-            self.driveMotors(0.1*left,3*desvio+0.6*center)
+            desvio = right - 2.15
+            self.driveMotors(0.1 * left, 4 * desvio + 1 * center)
+            return
         else:
-            self.driveMotors(0.5,0.5)
-
-
-
-
+            self.driveMotors(1, 1)
+            return
 
 
 class Map():
