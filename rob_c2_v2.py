@@ -135,6 +135,7 @@ class MyRob(CRobLinkAngs):
         for adjacent in possible_places:
             if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F':
                 self.target_locked = adjacent[1]
+                break
 
     def rotate(self):
         print("I am inside rotate")
@@ -150,15 +151,11 @@ class MyRob(CRobLinkAngs):
             self.orientation = self.target_locked
             self.target_locked = None
 
-
-
-
-
     def go(self):
         factor = self.get_rotation_factor()
         if self.orientation == orientation.Right:
-            if self.measures.x < self.supposed_x + 2:
-                self.move(0.09, 0.015, 0, factor)
+            if self.measures.x < self.supposed_x + 1.7:
+                self.move(0.12, 0.015, 0, factor)
             else:
                 self.moving = False
                 self.supposed_x += 2
@@ -167,8 +164,8 @@ class MyRob(CRobLinkAngs):
                 self.visited.append((self.map_location_x, self.map_location_y))
 
         elif self.orientation == orientation.Left:
-            if self.measures.x > self.supposed_x - 2:
-                self.move(0.09, 0.015, 0, factor)
+            if self.measures.x > self.supposed_x - 1.7:
+                self.move(0.12, 0.015, 0, factor)
             else:
                 self.moving = False
                 self.supposed_x -= 2
@@ -178,8 +175,8 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Up:
-            if self.measures.y < self.supposed_y + 2:
-                self.move(0.09, 0.015, 0, factor)
+            if self.measures.y < self.supposed_y + 1.7:
+                self.move(0.12, 0.015, 0, factor)
             else:
                 self.moving = False
                 self.supposed_y += 2
@@ -189,8 +186,8 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Down:
-            if self.measures.y > self.supposed_y - 2:
-                self.move(0.09, 0.015, 0, factor)
+            if self.measures.y > self.supposed_y - 1.7:
+                self.move(0.12, 0.015, 0, factor)
             else:
                 self.moving = False
                 self.supposed_y -= 2
@@ -207,11 +204,17 @@ class MyRob(CRobLinkAngs):
         diff = abs(real_heading - supposed_heading)
         print(diff)
         if (360 + supposed_heading - real_heading) % 360 > 180:
-            return +0.001 * diff
+            print("clockwise")
+            if target:
+                return +0.0035 * diff
+            else:
+                return +0.0175*diff
         else:
-            return -0.001 * diff
-
-
+            print("counter clockwise")
+            if target:
+                return -0.0035 * diff
+            else:
+                return -0.0175*diff
     def move(self, linear, k, m, r):
         right_power = linear + (k * (m - r)) / 2
         left_power = linear - (k * (m - r)) / 2
@@ -220,7 +223,6 @@ class MyRob(CRobLinkAngs):
     def stop(self):
         for i in range(0, 40):
             self.driveMotors(0, 0)
-        self.driveMotors(0, 0)
 
     def map(self):
         if self.orientation == orientation.Right:
@@ -230,14 +232,14 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
 
             if self.current_measures[1] > 1:
-                self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
-            else:
-                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
-
-            if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+
+            if self.current_measures[2] > 1:
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
+            else:
+                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
 
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
@@ -285,6 +287,27 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+        else:
+            if self.current_measures[0] > 1:
+                self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
+            else:
+                self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+
+            if self.current_measures[1] > 1:
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
+            else:
+                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+
+            if self.current_measures[2] > 1:
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
+            else:
+                self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+
+            if self.current_measures[3] > 1:
+                self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
+            else:
+                self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+
 
         return
 
