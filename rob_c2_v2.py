@@ -39,8 +39,14 @@ class MyRob(CRobLinkAngs):
         self.map_location_x = 27
         self.map_location_y = 13
         self.mymap[13][27] = "I"
-        self.visited = []
+        self.visited = set()
+        self.not_visited = set()
         self.target_locked = None
+        self.target_location = None
+        self.graph = {}
+        self.path = None
+        self.flag = False
+        self.need_to_rotate = False
 
     # In this map the center of cell (i,j), (i in 0..6, j in 0..13) is mapped to labMap[i*2][j*2].
     # to know if there is a wall on top of cell(i,j) (i in 0..5), check if the value of labMap[i*2+1][j*2] is space or not
@@ -105,49 +111,122 @@ class MyRob(CRobLinkAngs):
                 self.wander()
 
     def wander(self):
-        print(self.visited)
         if self.state == "map":
             print("I am mapping")
             self.map()
             self.state = "go"
 
+        elif self.state == "go_with_purpose":
+            if self.target_location is None:
+                print("where_to_advanced")
+                self.where_to_advanced()
+            if not self.need_to_rotate:
+                temp_orientation = self.where_to_basic(self.path[0])
+                if temp_orientation != self.orientation:
+                    self.target_locked = temp_orientation
+                    self.need_to_rotate = True
+            if self.need_to_rotate:
+                self.rotate()
+                return
+            self.go()
+
+
+
+
+
         elif self.state == "go":
             print("I am going")
             if self.next():
-                print("There is next available")
                 self.go()
             else:
-                print("I am rotating")
-                if self.target_locked is None:
-                    self.where_to()
-                self.rotate()
+                print("No path forward")
+                self.where_to_basic()
+
+        elif self.state == "rotate":
+            print("rotate")
+            self.rotate()
 
         elif self.state == "stop":
             print("I am stopping")
             self.stop()
-            self.state = "map"
+            if self.target_location == (self.map_location_x, self.map_location_y):
+                self.path = None
+                self.target_location = None
+                self.target_locked = None
+            if self.path is not None:
+                self.state = "go_with_purpose"
+            else:
+                self.state = "map"
 
-    def where_to(self):
+    def where_to_basic(self, target=None):
         # Are there any free, not visited, spaces adjacent to me
-        next = None
-        possible_places = [((self.map_location_x-2, self.map_location_y), orientation.Left),((self.map_location_x+2, self.map_location_y),orientation.Right),
-                           ((self.map_location_x, self.map_location_y-2),orientation.Up),((self.map_location_x, self.map_location_y+2),orientation.Down)]
+        level = 2
+
+        possible_places = [((self.map_location_x - level, self.map_location_y), orientation.Left),
+                           ((self.map_location_x + level, self.map_location_y), orientation.Right),
+                           ((self.map_location_x, self.map_location_y - level), orientation.Up),
+                           ((self.map_location_x, self.map_location_y + level), orientation.Down)]
         for adjacent in possible_places:
-            if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F':
-                self.target_locked = adjacent[1]
-                break
+            try:
+                if target is not None:
+                    if adjacent[0] == target:
+                        return adjacent[1]
+                if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F':
+                    self.target_locked = adjacent[1]
+                    self.state = "rotate"
+                    return
+            except IndexError as e:
+                continue
+        if self.target_locked is None:
+            self.state = "go_with_purpose"
+
+    def where_to_advanced(self):
+        min = 99
+
+        for key in self.graph.keys():
+            self.graph[key] = list(set(self.graph[key]))
+
+        self.not_visited = self.not_visited - self.visited
+        #print(self.not_visited)
+        #print(self.graph)
+        for node in self.not_visited:
+            self.graph.setdefault(node, [])
+
+        for node in self.not_visited:
+            path = self.calculate_path(self.graph, (self.map_location_x, self.map_location_y), node)
+            if len(path) < min:
+                self.target_location = node
+                self.path = path[1:]
+                min = len(path)
+        print("I am travelling to {} using path {}".format(self.target_location, self.path))
+
+    def calculate_path(self, graph, start, end, path=[]):
+        path = path + [start]
+        if start == end:
+            return path
+        shortest = None
+        for node in graph[start]:
+            if node not in path:
+                newpath = self.calculate_path(graph, node, end, path)
+                if newpath:
+                    if not shortest or len(newpath) < len(shortest):
+                        shortest = newpath
+
+        return shortest
 
     def rotate(self):
-        print("I am inside rotate")
         target_heading = self.possible_headings[self.target_locked.value]
-        print(target_heading,self.measures.compass, self.target_locked)
+        #print(target_heading, self.measures.compass, self.target_locked)
         factor = self.get_rotation_factor(soft_rotation=False, target=target_heading)
-        print(factor)
-        if not(target_heading - 1 <= self.measures.compass <= target_heading + 1):
-            print("MOVE")
-            self.move(0,0.9,0,factor)
+        #print(factor)
+        if not (target_heading - 1 <= self.measures.compass <= target_heading + 1):
+            self.move(0, 0.5, 0, factor)
         else:
-            self.state = "go"
+            if self.target_location is None:
+                self.state = "go"
+            else:
+                self.state = "go_with_purpose"
+                self.need_to_rotate = False
             self.orientation = self.target_locked
             self.target_locked = None
 
@@ -155,45 +234,62 @@ class MyRob(CRobLinkAngs):
         factor = self.get_rotation_factor()
         if self.orientation == orientation.Right:
             if self.measures.x < self.supposed_x + 1.7:
-                self.move(0.12, 0.015, 0, factor)
+                self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
                 self.supposed_x += 2
                 self.map_location_x += 2
                 self.state = "stop"
-                self.visited.append((self.map_location_x, self.map_location_y))
+                self.visited.add((self.map_location_x, self.map_location_y))
+                self.not_visited.discard((self.map_location_x, self.map_location_y))
+                if self.path is not None:
+                    self.path = self.path[1:]
+                    print(self.path)
 
         elif self.orientation == orientation.Left:
             if self.measures.x > self.supposed_x - 1.7:
-                self.move(0.12, 0.015, 0, factor)
+                self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
                 self.supposed_x -= 2
                 self.map_location_x -= 2
                 self.state = "stop"
-                self.visited.append((self.map_location_x, self.map_location_y))
+                self.visited.add((self.map_location_x, self.map_location_y))
+                self.not_visited.discard((self.map_location_x, self.map_location_y))
+                if self.path is not None:
+                    self.path = self.path[1:]
+                    print(self.path)
 
 
         elif self.orientation == orientation.Up:
             if self.measures.y < self.supposed_y + 1.7:
-                self.move(0.12, 0.015, 0, factor)
+                self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
                 self.supposed_y += 2
                 self.map_location_y -= 2
                 self.state = "stop"
-                self.visited.append((self.map_location_x, self.map_location_y))
+                self.visited.add((self.map_location_x, self.map_location_y))
+                self.not_visited.discard((self.map_location_x, self.map_location_y))
+                if self.path is not None:
+                    self.path = self.path[1:]
+                    print(self.path)
 
 
         elif self.orientation == orientation.Down:
             if self.measures.y > self.supposed_y - 1.7:
-                self.move(0.12, 0.015, 0, factor)
+                self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
                 self.supposed_y -= 2
                 self.map_location_y += 2
                 self.state = "stop"
-                self.visited.append((self.map_location_x, self.map_location_y))
+                self.visited.add((self.map_location_x, self.map_location_y))
+                self.not_visited.discard((self.map_location_x, self.map_location_y))
+                if self.path is not None:
+                    self.path = self.path[1:]
+                    print(self.path)
+
 
     def get_rotation_factor(self, soft_rotation=True, target=None):
         if soft_rotation:
@@ -201,27 +297,31 @@ class MyRob(CRobLinkAngs):
         else:
             supposed_heading = target
         real_heading = self.measures.compass
-        diff = abs(real_heading - supposed_heading)
-        print(diff)
-        if (360 + supposed_heading - real_heading) % 360 > 180:
-            print("clockwise")
-            if target:
-                return +0.0035 * diff
-            else:
-                return +0.0175*diff
+        if real_heading > 180 and supposed_heading == 0:
+            diff = 360 - real_heading
         else:
-            print("counter clockwise")
-            if target:
-                return -0.0035 * diff
+            diff = abs(supposed_heading - real_heading)
+        #print(diff)
+        if (360 + supposed_heading - real_heading) % 360 > 180:
+            #print("clockwise")
+            if target is not None:
+                return 0.075 * diff
             else:
-                return -0.0175*diff
+                return 0.5 * diff
+        else:
+            #print("counter clockwise")
+            if target is not None:
+                return -0.075 * diff
+            else:
+                return -0.5 * diff
+
     def move(self, linear, k, m, r):
         right_power = linear + (k * (m - r)) / 2
         left_power = linear - (k * (m - r)) / 2
         self.driveMotors(left_power, right_power)
 
     def stop(self):
-        for i in range(0, 40):
+        for i in range(0, 5):
             self.driveMotors(0, 0)
 
     def map(self):
@@ -230,84 +330,136 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x + 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y - 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y + 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x - 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x - 2, self.map_location_y))
+
+
 
         elif self.orientation == orientation.Up:
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y - 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x - 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x + 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y + 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y + 2))
+
 
         elif self.orientation == orientation.Down:
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y + 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x + 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x + 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x - 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y - 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y - 2))
+
         else:
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x - 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y + 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x, self.map_location_y - 2))
+                self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
-
+                self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
+                    .append((self.map_location_x + 2, self.map_location_y))
+                self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
         return
 
