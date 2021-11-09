@@ -114,7 +114,10 @@ class MyRob(CRobLinkAngs):
         if self.state == "map":
             print("I am mapping")
             self.map()
-            self.state = "go"
+            if self.path is not None:
+                self.state = "go_with_purpose"
+            else:
+                self.state = "go"
 
         elif self.state == "go_with_purpose":
             if self.target_location is None:
@@ -129,10 +132,6 @@ class MyRob(CRobLinkAngs):
                 self.rotate()
                 return
             self.go()
-
-
-
-
 
         elif self.state == "go":
             print("I am going")
@@ -153,26 +152,36 @@ class MyRob(CRobLinkAngs):
                 self.path = None
                 self.target_location = None
                 self.target_locked = None
-            if self.path is not None:
-                self.state = "go_with_purpose"
-            else:
-                self.state = "map"
+            elif self.target_location == (27, 13):
+                # self.state = "end"
+                self.state = "stop"
+            self.state = "map"
 
     def where_to_basic(self, target=None):
         # Are there any free, not visited, spaces adjacent to me
         level = 2
+        wall_level = 1
 
-        possible_places = [((self.map_location_x - level, self.map_location_y), orientation.Left),
-                           ((self.map_location_x + level, self.map_location_y), orientation.Right),
-                           ((self.map_location_x, self.map_location_y - level), orientation.Up),
-                           ((self.map_location_x, self.map_location_y + level), orientation.Down)]
+        possible_places = [((self.map_location_x - level, self.map_location_y), orientation.Left,
+                            (self.map_location_x - wall_level, self.map_location_y)),
+                           ((self.map_location_x + level, self.map_location_y), orientation.Right,
+                            (self.map_location_x + wall_level, self.map_location_y)),
+                           ((self.map_location_x, self.map_location_y - level), orientation.Up,
+                            (self.map_location_x, self.map_location_y - wall_level)),
+                           ((self.map_location_x, self.map_location_y + level), orientation.Down,
+                            (self.map_location_x, self.map_location_y + wall_level))]
         for adjacent in possible_places:
+            print(adjacent)
+            print(self.mymap[adjacent[2][1]][adjacent[2][0]])
             try:
                 if target is not None:
                     if adjacent[0] == target:
                         return adjacent[1]
-                if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F':
+                if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F' \
+                        and self.mymap[adjacent[2][1]][adjacent[2][0]] != "|" and self.mymap[adjacent[2][1]][
+                    adjacent[2][0]] != "-":
                     self.target_locked = adjacent[1]
+                    print(self.target_locked)
                     self.state = "rotate"
                     return
             except IndexError as e:
@@ -187,8 +196,8 @@ class MyRob(CRobLinkAngs):
             self.graph[key] = list(set(self.graph[key]))
 
         self.not_visited = self.not_visited - self.visited
-        #print(self.not_visited)
-        #print(self.graph)
+        # print(self.not_visited)
+        # print(self.graph)
         for node in self.not_visited:
             self.graph.setdefault(node, [])
 
@@ -198,6 +207,9 @@ class MyRob(CRobLinkAngs):
                 self.target_location = node
                 self.path = path[1:]
                 min = len(path)
+        if self.target_location is None:
+            self.path = self.calculate_path(self.graph, (self.map_location_x, self.map_location_y), (27, 13))[1:]
+            self.target_location = (27, 13)
         print("I am travelling to {} using path {}".format(self.target_location, self.path))
 
     def calculate_path(self, graph, start, end, path=[]):
@@ -216,9 +228,9 @@ class MyRob(CRobLinkAngs):
 
     def rotate(self):
         target_heading = self.possible_headings[self.target_locked.value]
-        #print(target_heading, self.measures.compass, self.target_locked)
+        # print(target_heading, self.measures.compass, self.target_locked)
         factor = self.get_rotation_factor(soft_rotation=False, target=target_heading)
-        #print(factor)
+        # print(factor)
         if not (target_heading - 1 <= self.measures.compass <= target_heading + 1):
             self.move(0, 0.5, 0, factor)
         else:
@@ -290,7 +302,6 @@ class MyRob(CRobLinkAngs):
                     self.path = self.path[1:]
                     print(self.path)
 
-
     def get_rotation_factor(self, soft_rotation=True, target=None):
         if soft_rotation:
             supposed_heading = self.possible_headings[self.orientation.value]
@@ -301,15 +312,15 @@ class MyRob(CRobLinkAngs):
             diff = 360 - real_heading
         else:
             diff = abs(supposed_heading - real_heading)
-        #print(diff)
+        # print(diff)
         if (360 + supposed_heading - real_heading) % 360 > 180:
-            #print("clockwise")
+            # print("clockwise")
             if target is not None:
                 return 0.075 * diff
             else:
                 return 0.5 * diff
         else:
-            #print("counter clockwise")
+            # print("counter clockwise")
             if target is not None:
                 return -0.075 * diff
             else:
@@ -466,16 +477,21 @@ class MyRob(CRobLinkAngs):
     def next(self):
         if self.orientation == orientation.Right:
             return self.mymap[self.map_location_y][self.map_location_x + 2] == "F" and \
-                   self.mymap[self.map_location_y][self.map_location_x + 1] != "|"
+                   self.mymap[self.map_location_y][self.map_location_x + 1] != "|" and \
+                   (self.map_location_x + 2, self.map_location_y) not in self.visited
+
         elif self.orientation == orientation.Up:
             return self.mymap[self.map_location_y - 2][self.map_location_x] == "F" and \
-                   self.mymap[self.map_location_y - 1][self.map_location_x] != "-"
+                   self.mymap[self.map_location_y - 1][self.map_location_x] != "-" and \
+                   (self.map_location_x, self.map_location_y - 2) not in self.visited
         elif self.orientation == orientation.Left:
             return self.mymap[self.map_location_y][self.map_location_x - 2] == "F" and \
-                   self.mymap[self.map_location_y][self.map_location_x - 1] != "|"
+                   self.mymap[self.map_location_y][self.map_location_x - 1] != "|" and \
+                   (self.map_location_x - 2, self.map_location_y) not in self.visited
         else:
             return self.mymap[self.map_location_y + 2][self.map_location_x] == "F" and \
-                   self.mymap[self.map_location_y + 1][self.map_location_x] != "-"
+                   self.mymap[self.map_location_y + 1][self.map_location_x] != "-" and \
+                   (self.map_location_x, self.map_location_y + 2) not in self.visited
 
 
 class Map():
