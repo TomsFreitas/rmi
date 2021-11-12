@@ -25,7 +25,7 @@ class orientation(Enum):
 
 class MyRob(CRobLinkAngs):
     def __init__(self, rob_name, rob_id, angles, host):
-        CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
+        CRobLinkAngs.__init__(self, 'toms', rob_id, angles, host)
         self.current_measures = []
         self.state = "map"
         self.possible_headings = [0, 90, 180, 270]
@@ -125,6 +125,8 @@ class MyRob(CRobLinkAngs):
             if self.target_location is None:
                 # print("where_to_advanced")
                 self.where_to_advanced()
+                if self.path is None or self.path == []:
+                    return
             if not self.need_to_rotate:
                 temp_orientation = self.where_to_basic(self.path[0])
                 if temp_orientation != self.orientation:
@@ -156,14 +158,12 @@ class MyRob(CRobLinkAngs):
                 self.path = None
                 self.target_location = None
                 self.target_locked = None
-                if self.map_location_x == 27 and self.map_location_y == 13 and len(self.not_visited) == 0:
-                    self.state = "end"
-                    return
             self.state = "map"
             # self.state = "stop"
         elif self.state == "end":
-            self.stop()
+            self.finish()
             self.create_mapping_file()
+
 
     def where_to_basic(self, target=None):
         # Are there any free, not visited, spaces adjacent to me
@@ -221,8 +221,8 @@ class MyRob(CRobLinkAngs):
                 self.path = path[1:]
                 min = len(path)
         if self.target_location is None:
-            self.path = self.calculate_path(self.graph, (self.map_location_x, self.map_location_y), (27, 13))[1:]
-            self.target_location = (27, 13)
+            self.state = "end"
+            return
         print("I am travelling to {} using path {}".format(self.target_location, self.path))
         print(self.mymap[15][27])
 
@@ -259,7 +259,7 @@ class MyRob(CRobLinkAngs):
     def go(self):
         factor = self.get_rotation_factor()
         if self.orientation == orientation.Right:
-            if self.measures.x < self.supposed_x + 1.70:
+            if self.measures.x < self.supposed_x + 1.65:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -273,7 +273,7 @@ class MyRob(CRobLinkAngs):
                     print(self.path)
 
         elif self.orientation == orientation.Left:
-            if self.measures.x > self.supposed_x - 1.46:
+            if self.measures.x > self.supposed_x - 1.65:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -288,7 +288,7 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Up:
-            if self.measures.y < self.supposed_y + 1.70:
+            if self.measures.y < self.supposed_y + 1.65:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -303,7 +303,7 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Down:
-            if self.measures.y > self.supposed_y - 1.70:
+            if self.measures.y > self.supposed_y - 1.65:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -361,6 +361,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
@@ -369,6 +370,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
@@ -388,6 +390,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
@@ -412,6 +415,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
@@ -422,6 +426,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
@@ -447,6 +452,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
@@ -464,6 +470,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
@@ -472,6 +479,7 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
@@ -538,7 +546,6 @@ class Map():
             i = i + 1
 
 
-rob_name = "pClient1"
 host = "localhost"
 pos = 1
 mapc = None
@@ -557,7 +564,7 @@ for i in range(1, len(sys.argv), 2):
         quit()
 
 if __name__ == '__main__':
-    rob = MyRob(rob_name, pos, [0.0, 90.0, -90.0, 180.0], host)
+    rob = MyRob('toms', pos, [0.0, 90.0, -90.0, 180.0], host)
     if mapc != None:
         rob.setMap(mapc.labMap)
         rob.printMap()
