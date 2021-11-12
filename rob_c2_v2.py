@@ -524,7 +524,15 @@ class MyRob(CRobLinkAngs):
                    (self.map_location_x, self.map_location_y + 2) not in self.visited
 
     def create_mapping_file(self):
-        pass
+        self.mymap[13][27] = "I"
+        f = open("our_mapping.out","a")
+
+        for row in self.mymap:
+            for val in row:
+                f.write("{:1}".format(val))
+            f.write("\n")
+
+        f.close()
 
 
 class Map():
