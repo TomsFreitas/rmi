@@ -26,6 +26,7 @@ class orientation(Enum):
 class MyRob(CRobLinkAngs):
     def __init__(self, rob_name, rob_id, angles, host):
         CRobLinkAngs.__init__(self, 'toms', rob_id, angles, host)
+        self.robName = rob_name
         self.current_measures = []
         self.state = "map"
         self.possible_headings = [0, 90, 180, 270]
@@ -353,7 +354,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x + 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
@@ -361,8 +363,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
@@ -370,8 +372,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
@@ -379,7 +381,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x - 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
@@ -390,8 +393,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
@@ -399,7 +402,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x - 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
@@ -407,7 +411,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x + 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
@@ -415,8 +420,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
@@ -426,8 +431,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
@@ -435,7 +440,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x + 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
@@ -444,7 +450,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x - 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
@@ -452,8 +459,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
@@ -462,7 +469,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x - 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x - 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
@@ -470,8 +478,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[1] > 1:
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y + 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y + 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y + 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
@@ -479,8 +487,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[2] > 1:
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "-"
             else:
-                self.mymap[self.map_location_y - 1][self.map_location_x] = "F"
-                self.mymap[self.map_location_y - 2][self.map_location_x] = "F"
+                self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
+                self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x, self.map_location_y - 2))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
@@ -488,7 +496,8 @@ class MyRob(CRobLinkAngs):
             if self.current_measures[3] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
             else:
-                self.mymap[self.map_location_y][self.map_location_x + 2] = "F"
+                self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
+                self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
                     .append((self.map_location_x + 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
@@ -497,20 +506,20 @@ class MyRob(CRobLinkAngs):
 
     def next(self):
         if self.orientation == orientation.Right:
-            return self.mymap[self.map_location_y][self.map_location_x + 2] == "F" and \
+            return self.mymap[self.map_location_y][self.map_location_x + 2] == "X" and \
                    self.mymap[self.map_location_y][self.map_location_x + 1] != "|" and \
                    (self.map_location_x + 2, self.map_location_y) not in self.visited
 
         elif self.orientation == orientation.Up:
-            return self.mymap[self.map_location_y - 2][self.map_location_x] == "F" and \
+            return self.mymap[self.map_location_y - 2][self.map_location_x] == "X" and \
                    self.mymap[self.map_location_y - 1][self.map_location_x] != "-" and \
                    (self.map_location_x, self.map_location_y - 2) not in self.visited
         elif self.orientation == orientation.Left:
-            return self.mymap[self.map_location_y][self.map_location_x - 2] == "F" and \
+            return self.mymap[self.map_location_y][self.map_location_x - 2] == "X" and \
                    self.mymap[self.map_location_y][self.map_location_x - 1] != "|" and \
                    (self.map_location_x - 2, self.map_location_y) not in self.visited
         else:
-            return self.mymap[self.map_location_y + 2][self.map_location_x] == "F" and \
+            return self.mymap[self.map_location_y + 2][self.map_location_x] == "X" and \
                    self.mymap[self.map_location_y + 1][self.map_location_x] != "-" and \
                    (self.map_location_x, self.map_location_y + 2) not in self.visited
 
