@@ -112,16 +112,18 @@ class MyRob(CRobLinkAngs):
 
     def wander(self):
         if self.state == "map":
-            print("I am mapping")
+            # print("I am mapping")
             self.map()
-            if self.path is not None:
+            if self.path is not None and self.path != []:
                 self.state = "go_with_purpose"
             else:
                 self.state = "go"
 
         elif self.state == "go_with_purpose":
+            print("go_with_purpose")
+            print(self.map_location_x, self.map_location_y)
             if self.target_location is None:
-                print("where_to_advanced")
+                # print("where_to_advanced")
                 self.where_to_advanced()
             if not self.need_to_rotate:
                 temp_orientation = self.where_to_basic(self.path[0])
@@ -134,7 +136,8 @@ class MyRob(CRobLinkAngs):
             self.go()
 
         elif self.state == "go":
-            print("I am going")
+            # print("I am going")
+            print(self.map_location_x, self.map_location_y)
             if self.next():
                 self.go()
             else:
@@ -142,25 +145,31 @@ class MyRob(CRobLinkAngs):
                 self.where_to_basic()
 
         elif self.state == "rotate":
-            print("rotate")
+            # print("rotate")
             self.rotate()
 
         elif self.state == "stop":
             print("I am stopping")
             self.stop()
             if self.target_location == (self.map_location_x, self.map_location_y):
+                print("clearing path")
                 self.path = None
                 self.target_location = None
                 self.target_locked = None
-            elif self.target_location == (27, 13):
-                # self.state = "end"
-                self.state = "stop"
+                if self.map_location_x == 27 and self.map_location_y == 13 and len(self.not_visited) == 0:
+                    self.state = "end"
+                    return
             self.state = "map"
+            # self.state = "stop"
+        elif self.state == "end":
+            self.stop()
+            self.create_mapping_file()
 
     def where_to_basic(self, target=None):
         # Are there any free, not visited, spaces adjacent to me
         level = 2
         wall_level = 1
+        print(target)
 
         possible_places = [((self.map_location_x - level, self.map_location_y), orientation.Left,
                             (self.map_location_x - wall_level, self.map_location_y)),
@@ -171,19 +180,21 @@ class MyRob(CRobLinkAngs):
                            ((self.map_location_x, self.map_location_y + level), orientation.Down,
                             (self.map_location_x, self.map_location_y + wall_level))]
         for adjacent in possible_places:
-            print(adjacent)
-            print(self.mymap[adjacent[2][1]][adjacent[2][0]])
+            # print(adjacent)
+            # print(self.mymap[adjacent[2][1]][adjacent[2][0]])
             try:
                 if target is not None:
                     if adjacent[0] == target:
                         return adjacent[1]
-                if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F' \
-                        and self.mymap[adjacent[2][1]][adjacent[2][0]] != "|" and self.mymap[adjacent[2][1]][
-                    adjacent[2][0]] != "-":
-                    self.target_locked = adjacent[1]
-                    print(self.target_locked)
-                    self.state = "rotate"
-                    return
+                else:
+                    if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F' \
+                            and self.mymap[adjacent[2][1]][adjacent[2][0]] != "|" and self.mymap[adjacent[2][1]][
+                        adjacent[2][0]] != "-":
+                        self.target_locked = adjacent[1]
+                        print(self.target_locked)
+                        self.state = "rotate"
+                        print("found path now i am rotating")
+                        return
             except IndexError as e:
                 continue
         if self.target_locked is None:
@@ -202,6 +213,8 @@ class MyRob(CRobLinkAngs):
             self.graph.setdefault(node, [])
 
         for node in self.not_visited:
+            if node == (27, 13):
+                continue
             path = self.calculate_path(self.graph, (self.map_location_x, self.map_location_y), node)
             if len(path) < min:
                 self.target_location = node
@@ -211,6 +224,7 @@ class MyRob(CRobLinkAngs):
             self.path = self.calculate_path(self.graph, (self.map_location_x, self.map_location_y), (27, 13))[1:]
             self.target_location = (27, 13)
         print("I am travelling to {} using path {}".format(self.target_location, self.path))
+        print(self.mymap[15][27])
 
     def calculate_path(self, graph, start, end, path=[]):
         path = path + [start]
@@ -245,7 +259,7 @@ class MyRob(CRobLinkAngs):
     def go(self):
         factor = self.get_rotation_factor()
         if self.orientation == orientation.Right:
-            if self.measures.x < self.supposed_x + 1.7:
+            if self.measures.x < self.supposed_x + 1.70:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -259,7 +273,7 @@ class MyRob(CRobLinkAngs):
                     print(self.path)
 
         elif self.orientation == orientation.Left:
-            if self.measures.x > self.supposed_x - 1.7:
+            if self.measures.x > self.supposed_x - 1.46:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -274,7 +288,7 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Up:
-            if self.measures.y < self.supposed_y + 1.7:
+            if self.measures.y < self.supposed_y + 1.70:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -289,7 +303,7 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Down:
-            if self.measures.y > self.supposed_y - 1.7:
+            if self.measures.y > self.supposed_y - 1.70:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -332,8 +346,7 @@ class MyRob(CRobLinkAngs):
         self.driveMotors(left_power, right_power)
 
     def stop(self):
-        for i in range(0, 5):
-            self.driveMotors(0, 0)
+        self.driveMotors(0.00, 0.00)
 
     def map(self):
         if self.orientation == orientation.Right:
@@ -492,6 +505,9 @@ class MyRob(CRobLinkAngs):
             return self.mymap[self.map_location_y + 2][self.map_location_x] == "F" and \
                    self.mymap[self.map_location_y + 1][self.map_location_x] != "-" and \
                    (self.map_location_x, self.map_location_y + 2) not in self.visited
+
+    def create_mapping_file(self):
+        pass
 
 
 class Map():
