@@ -153,12 +153,15 @@ class MyRob(CRobLinkAngs):
 
         elif self.state == "stop":
             print("I am stopping")
-            self.stop()
             if self.target_location == (self.map_location_x, self.map_location_y):
                 print("clearing path")
                 self.path = None
                 self.target_location = None
                 self.target_locked = None
+                self.state = "map"
+                return
+            if self.path is None or self.path == []:
+                self.stop()
             self.state = "map"
             # self.state = "stop"
         elif self.state == "end":
@@ -212,6 +215,7 @@ class MyRob(CRobLinkAngs):
         # print(self.graph)
         for node in self.not_visited:
             self.graph.setdefault(node, [])
+        self.infer_deadend()
 
         for node in self.not_visited:
             if node == (27, 13):
@@ -258,9 +262,13 @@ class MyRob(CRobLinkAngs):
             self.target_locked = None
 
     def go(self):
+        if self.state == "go_with_purpose":
+            inertia_comp = 1.5
+        else:
+            inertia_comp = 1.65
         factor = self.get_rotation_factor()
         if self.orientation == orientation.Right:
-            if self.measures.x < self.supposed_x + 1.65:
+            if self.measures.x < self.supposed_x + inertia_comp:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -274,7 +282,7 @@ class MyRob(CRobLinkAngs):
                     print(self.path)
 
         elif self.orientation == orientation.Left:
-            if self.measures.x > self.supposed_x - 1.65:
+            if self.measures.x > self.supposed_x - inertia_comp:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -289,7 +297,7 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Up:
-            if self.measures.y < self.supposed_y + 1.65:
+            if self.measures.y < self.supposed_y + inertia_comp:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -304,7 +312,7 @@ class MyRob(CRobLinkAngs):
 
 
         elif self.orientation == orientation.Down:
-            if self.measures.y > self.supposed_y - 1.65:
+            if self.measures.y > self.supposed_y - inertia_comp:
                 self.move(0.13, 0.1, 0, factor)
             else:
                 self.moving = False
@@ -533,6 +541,20 @@ class MyRob(CRobLinkAngs):
             f.write("\n")
 
         f.close()
+
+    def infer_deadend(self):
+        for row in range(1, len(self.mymap), 2):
+            for i,cell in enumerate(self.mymap[row]):
+                wall_counter = 0
+                if cell == "X":
+                    walls = [self.mymap[row][i-1], self.mymap[row][i+1], self.mymap[row-1][i], self.mymap[row+1][i]]
+                    for wall in walls:
+                        if wall in ("|", "-"):
+                            wall_counter+=1
+                    if wall_counter == 3:
+                        self.visited.add((i, row))
+                        self.not_visited.discard((i,row))
+
 
 
 class Map():
