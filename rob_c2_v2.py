@@ -25,8 +25,8 @@ class orientation(Enum):
 
 class MyRob(CRobLinkAngs):
     def __init__(self, rob_name, rob_id, angles, host):
-        CRobLinkAngs.__init__(self, 'toms', rob_id, angles, host)
-        self.robName = rob_name
+        CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
+        self.rob_name = rob_name
         self.current_measures = []
         self.state = "map"
         self.possible_headings = [0, 90, 180, 270]
