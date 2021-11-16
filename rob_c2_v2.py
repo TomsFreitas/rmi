@@ -113,7 +113,7 @@ class MyRob(CRobLinkAngs):
 
     def wander(self):
         if self.state == "map":
-            # print("I am mapping")
+            print("I am mapping")
             self.map()
             if self.path is not None and self.path != []:
                 self.state = "go_with_purpose"
@@ -158,11 +158,11 @@ class MyRob(CRobLinkAngs):
                 self.path = None
                 self.target_location = None
                 self.target_locked = None
-                self.state = "map"
-                return
             if self.path is None or self.path == []:
                 self.stop()
-            self.state = "map"
+                self.state = "map"
+            else:
+                self.state = "go_with_purpose"
             # self.state = "stop"
         elif self.state == "end":
             self.finish()
@@ -263,7 +263,7 @@ class MyRob(CRobLinkAngs):
 
     def go(self):
         if self.state == "go_with_purpose":
-            inertia_comp = 1.5
+            inertia_comp = 1.55
         else:
             inertia_comp = 1.65
         factor = self.get_rotation_factor()
