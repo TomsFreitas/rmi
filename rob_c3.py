@@ -137,11 +137,7 @@ class MyRob(CRobLinkAngs):
                 print(self.beacons_positions[i]) 
 
             self.map()
-            if (-1, -1) not in self.beacons_positions:
-                self.calculate_beacon_paths()
-                if self.shortest_path_found:
-                    self.state = "end"
-                    return
+
             if self.path is not None and self.path != []:
                 self.state = "go_with_purpose"
             else:
@@ -166,6 +162,7 @@ class MyRob(CRobLinkAngs):
             self.go()
 
         elif self.state == "go":
+
             # print("I am going")
             print(self.map_location_x, self.map_location_y)
             if self.next():
@@ -180,14 +177,7 @@ class MyRob(CRobLinkAngs):
 
         elif self.state == "stop":
             print("I am stopping")
-            if self.map_location_x > self.top_right:
-                self.top_right = self.map_location_x
-            if self.map_location_x < self.top_left:
-                self.top_left = self.map_location_x
-            if self.map_location_y > self.top_up:
-                self.top_up = self.map_location_y
-            if self.map_location_y < self.top_down:
-                self.top_down = self.map_location_y
+
             if self.target_location == (self.map_location_x, self.map_location_y):
                 print("clearing path")
                 self.path = None
@@ -301,6 +291,11 @@ class MyRob(CRobLinkAngs):
             self.target_locked = None
 
     def go(self):
+        if (-1, -1) not in self.beacons_positions:
+            self.calculate_beacon_paths()
+            if self.shortest_path_found:
+                self.state = "end"
+                return
         if self.state == "go_with_purpose":
             inertia_comp = 1.55
         else:
@@ -572,14 +567,15 @@ class MyRob(CRobLinkAngs):
 
     def create_pathing_file(self):
         self.mymap[13][27] = "I"
-        f = open("our_mapping.out","a")
+        f = open("path.out","a")
+        initial_pos_x = 27
+        initial_pos_y = 13
+        f.write("0 0\n")
+        for node in self.shortest_path:
+            x = node[0] - initial_pos_x
+            y = initial_pos_y - node[1]
+            f.write("{} {}\n".format(x,y))
 
-        for row in self.mymap:
-            for val in row:
-                f.write("{:1}".format(val))
-            f.write("\n")
-
-        f.close()
 
     def infer_deadend(self):
         for row in range(1, len(self.mymap), 2):
@@ -636,8 +632,32 @@ class MyRob(CRobLinkAngs):
         new_graph = copy.deepcopy(self.graph)
         for row in range(1, len(self.mymap), 2):
             for i, cell in enumerate(self.mymap[row]):
+                possible_places = [((i + 2, row),1), ((i - 2, row),1), ((i, row + 2),1), ((i, row - 2),1)]
                 if self.mymap[row][i] == ' ':
-                    new_graph[(i, row)] = [(i + 2, row), (i - 2, row), (i, row + 2), (i, row - 2)]
+                    for place in possible_places:
+                        try:
+                            temp = self.mymap[place[0][1]][place[0][0]]
+                            if place[0][0] < 0 or place[0][1] < 0:
+                                continue
+                            new_graph.setdefault((i, row),[]).append(((place[0][0],place[0][1]),1))
+                        except:
+                            #print("except {}".format(place))
+                            continue
+                try:
+                    if new_graph[(i,row)] == []:
+                        for place in possible_places:
+                            try:
+                                temp = self.mymap[place[0][1]][place[0][0]]
+                                if place[0][0] < 0 or place[0][1] < 0:
+                                    continue
+                                new_graph.setdefault((i, row), []).append(((place[0][0], place[0][1]), 1))
+                            except:
+                                #print("except {}".format(place))
+                                continue
+                except:
+                    continue
+
+        #print(new_graph)
 
         #run dijkstra in every beacon_position
         for beacon in self.beacons_positions:
@@ -683,6 +703,9 @@ class MyRob(CRobLinkAngs):
 
         print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
 
+        if shortest_path == shortest_path_unk:
+            self.shortest_path_found = True
+            self.shortest_path = shortest_path
 
         return
 
