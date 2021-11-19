@@ -7,8 +7,8 @@ import xml.etree.ElementTree as ET
 import pprint
 from enum import Enum
 import itertools
-import threading
 import heapq
+
 pp = pprint.PrettyPrinter(indent=10)
 
 CELLROWS = 7
@@ -23,7 +23,7 @@ class orientation(Enum):
 
 
 class MyRob(CRobLinkAngs):
-    def __init__(self, rob_name, rob_id, angles, host):
+    def __init__(self, rob_name, rob_id, angles, host, filename):
         CRobLinkAngs.__init__(self, rob_name, rob_id, angles, host)
         self.rob_name = rob_name
         self.current_measures = []
@@ -50,11 +50,7 @@ class MyRob(CRobLinkAngs):
         self.beacons_positions = None
         self.shortest_path_found = False
         self.shortest_path = None
-        self.top_right = 0
-        self.top_left = 0
-        self.top_up = 0
-        self.top_down = 0
-        self.finding_thread = None
+        self.filename = filename
 
     # In this map the center of cell (i,j), (i in 0..6, j in 0..13) is mapped to labMap[i*2][j*2].
     # to know if there is a wall on top of cell(i,j) (i in 0..5), check if the value of labMap[i*2+1][j*2] is space or not
@@ -71,7 +67,7 @@ class MyRob(CRobLinkAngs):
             quit()
 
         print("Number of beacons: ", self.nBeacons)
-        self.beacons_positions = [(-1,-1) for i in range(int(self.nBeacons))]
+        self.beacons_positions = [(-1, -1) for i in range(int(self.nBeacons))]
 
         state = 'stop'
         stopped_state = 'run'
@@ -132,17 +128,16 @@ class MyRob(CRobLinkAngs):
 
             # check if it is on top of a beacon
             if self.measures.ground != -1:
-                #saving the beacon location
-                self.beacons_positions[self.measures.ground]=(self.map_location_x,self.map_location_y)
+                # saving the beacon location
+                self.beacons_positions[self.measures.ground] = (self.map_location_x, self.map_location_y)
 
+            print("\nBeacons positions: ");
 
-            print("\nBeacons positions: ");    
-
-            for i in range(0, len(self.beacons_positions)):    
-                print(self.beacons_positions[i]) 
+            for i in range(0, len(self.beacons_positions)):
+                print(self.beacons_positions[i])
 
             self.map()
-            #self.infer_blocked()
+            # self.infer_blocked()
 
             if self.path is not None and self.path != []:
                 self.state = "go_with_purpose"
@@ -202,7 +197,6 @@ class MyRob(CRobLinkAngs):
             self.finish()
             self.create_pathing_file()
 
-
     def where_to_basic(self, target=None):
         # Are there any free, not visited, spaces adjacent to me
         level = 2
@@ -249,7 +243,7 @@ class MyRob(CRobLinkAngs):
         # print(self.graph)
         for node in self.not_visited:
             self.graph.setdefault(node, [])
-        #self.infer_deadend()
+        # self.infer_deadend()
 
         for node in self.not_visited:
             if node == (27, 13):
@@ -401,7 +395,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x + 2, self.map_location_y),1))
+                    .append(((self.map_location_x + 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
             if self.current_measures[1] > 1:
@@ -410,7 +404,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y - 2),1))
+                    .append(((self.map_location_x, self.map_location_y - 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
             if self.current_measures[2] > 1:
@@ -419,7 +413,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y + 2),1))
+                    .append(((self.map_location_x, self.map_location_y + 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
             if self.current_measures[3] > 1:
@@ -428,7 +422,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x - 2, self.map_location_y),1))
+                    .append(((self.map_location_x - 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
 
@@ -440,7 +434,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y - 2),1))
+                    .append(((self.map_location_x, self.map_location_y - 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
             if self.current_measures[1] > 1:
@@ -449,7 +443,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x - 2, self.map_location_y),1))
+                    .append(((self.map_location_x - 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
             if self.current_measures[2] > 1:
@@ -458,7 +452,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x + 2, self.map_location_y),1))
+                    .append(((self.map_location_x + 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
             if self.current_measures[3] > 1:
@@ -467,7 +461,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y + 2),1))
+                    .append(((self.map_location_x, self.map_location_y + 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
 
@@ -478,7 +472,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y + 2),1))
+                    .append(((self.map_location_x, self.map_location_y + 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
             if self.current_measures[1] > 1:
@@ -487,7 +481,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x + 2, self.map_location_y),1))
+                    .append(((self.map_location_x + 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
@@ -497,7 +491,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x - 2, self.map_location_y),1))
+                    .append(((self.map_location_x - 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
             if self.current_measures[3] > 1:
@@ -506,7 +500,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y - 2),1))
+                    .append(((self.map_location_x, self.map_location_y - 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
         else:
@@ -516,7 +510,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x - 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x - 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x - 2, self.map_location_y),1))
+                    .append(((self.map_location_x - 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x - 2, self.map_location_y))
 
             if self.current_measures[1] > 1:
@@ -525,7 +519,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y + 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y + 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y + 2),1))
+                    .append(((self.map_location_x, self.map_location_y + 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y + 2))
 
             if self.current_measures[2] > 1:
@@ -534,7 +528,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y - 1][self.map_location_x] = "X"
                 self.mymap[self.map_location_y - 2][self.map_location_x] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x, self.map_location_y - 2),1))
+                    .append(((self.map_location_x, self.map_location_y - 2), 1))
                 self.not_visited.add((self.map_location_x, self.map_location_y - 2))
 
             if self.current_measures[3] > 1:
@@ -543,7 +537,7 @@ class MyRob(CRobLinkAngs):
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "X"
                 self.mymap[self.map_location_y][self.map_location_x + 2] = "X"
                 self.graph.setdefault((self.map_location_x, self.map_location_y), []) \
-                    .append(((self.map_location_x + 2, self.map_location_y),1))
+                    .append(((self.map_location_x + 2, self.map_location_y), 1))
                 self.not_visited.add((self.map_location_x + 2, self.map_location_y))
 
         return
@@ -569,26 +563,26 @@ class MyRob(CRobLinkAngs):
 
     def create_pathing_file(self):
         self.mymap[13][27] = "I"
-        f = open("path.out","a")
+        f = open(self.filename, "a")
         initial_pos_x = 27
         initial_pos_y = 13
         f.write("0 0\n")
         for node in self.shortest_path:
             x = node[0] - initial_pos_x
             y = initial_pos_y - node[1]
-            f.write("{} {}\n".format(x,y))
-
+            f.write("{} {}\n".format(x, y))
 
     def infer_blocked(self):
         for row in range(1, len(self.mymap), 2):
-            for i,cell in enumerate(self.mymap[row]):
+            for i, cell in enumerate(self.mymap[row]):
                 wall_counter = 0
                 if cell == " ":
                     try:
-                        walls = [self.mymap[row][i-1], self.mymap[row][i+1], self.mymap[row-1][i], self.mymap[row+1][i]]
+                        walls = [self.mymap[row][i - 1], self.mymap[row][i + 1], self.mymap[row - 1][i],
+                                 self.mymap[row + 1][i]]
                         for wall in walls:
                             if wall in ("|", "-"):
-                                wall_counter+=1
+                                wall_counter += 1
                         if wall_counter == 4:
                             self.mymap[row][i] = "*"
                     except:
@@ -608,8 +602,6 @@ class MyRob(CRobLinkAngs):
                     previous[neighbor] = node
                     heapq.heappush(queue, (neighbor, temp))
         return distances, previous
-
-
 
     def calculate_beacon_paths(self):
         shortest = 99
@@ -636,20 +628,22 @@ class MyRob(CRobLinkAngs):
         new_graph = copy.deepcopy(self.graph)
         for row in range(1, len(self.mymap), 2):
             for i, cell in enumerate(self.mymap[row]):
-                possible_places = [((i + 2, row),1,(i+1, row)), ((i - 2, row),1,(i-1, row)), ((i, row + 2),1,(i, row+1)), ((i, row - 2),1,(i, row-1))]
+                possible_places = [((i + 2, row), 1, (i + 1, row)), ((i - 2, row), 1, (i - 1, row)),
+                                   ((i, row + 2), 1, (i, row + 1)), ((i, row - 2), 1, (i, row - 1))]
                 if self.mymap[row][i] == ' ':
                     for place in possible_places:
                         try:
                             temp = self.mymap[place[0][1]][place[0][0]]
                             if place[0][0] < 0 or place[0][1] < 0:
                                 continue
-                            if self.mymap[place[2][1]][place[2][0]] != "|" and self.mymap[place[2][1]][place[2][0]] != "-":
-                                new_graph.setdefault((i, row),[]).append(((place[0][0],place[0][1]),1))
+                            if self.mymap[place[2][1]][place[2][0]] != "|" and self.mymap[place[2][1]][
+                                place[2][0]] != "-":
+                                new_graph.setdefault((i, row), []).append(((place[0][0], place[0][1]), 1))
                         except:
-                            #print("except {}".format(place))
+                            # print("except {}".format(place))
                             continue
                 try:
-                    if new_graph[(i,row)] == []:
+                    if new_graph[(i, row)] == []:
                         for place in possible_places:
                             try:
                                 temp = self.mymap[place[0][1]][place[0][0]]
@@ -659,25 +653,24 @@ class MyRob(CRobLinkAngs):
                                     place[2][0]] != "-":
                                     new_graph.setdefault((i, row), []).append(((place[0][0], place[0][1]), 1))
                             except:
-                                #print("except {}".format(place))
+                                # print("except {}".format(place))
                                 continue
                 except:
                     continue
 
-        #print(new_graph)
+        # print(new_graph)
 
-        #run dijkstra in every beacon_position
+        # run dijkstra in every beacon_position
         for beacon in self.beacons_positions:
             distances, backtracking = self.dijkstra(self.graph, beacon)
             distances_unk, backtracking_unk = self.dijkstra(new_graph, beacon)
             paths[beacon] = backtracking
             paths_unk[beacon] = backtracking_unk
 
-
         # calculate every permutation of closed paths beginning at 27,13
         perms = []
         for perm in itertools.permutations(self.beacons_positions):
-            if perm <= perm[::-1] and perm[0] == (27,13):
+            if perm <= perm[::-1] and perm[0] == (27, 13):
                 perms.append(perm)
 
         # for each permutation, calculate path size
@@ -686,14 +679,13 @@ class MyRob(CRobLinkAngs):
             perm_path_unk = []
             perm_list = list(perm)
             perm_list.append(perm[0])  # create closed path
-            #print("PERM {}".format(perm))
-            for i,beacon in enumerate(perm_list):
-                if i <= len(perm_list)-2:
-                    perm_path.append(self.get_path(perm_list[i], perm_list[i+1], paths[beacon]))
-                    perm_path_unk.append(self.get_path(perm_list[i], perm_list[i+1], paths_unk[beacon]))
+            # print("PERM {}".format(perm))
+            for i, beacon in enumerate(perm_list):
+                if i <= len(perm_list) - 2:
+                    perm_path.append(self.get_path(perm_list[i], perm_list[i + 1], paths[beacon]))
+                    perm_path_unk.append(self.get_path(perm_list[i], perm_list[i + 1], paths_unk[beacon]))
             perm_paths[perm] = list(itertools.chain(*perm_path))
             perm_paths_unk[perm] = list(itertools.chain(*perm_path_unk))
-
 
         for perm in perm_paths.keys():
             if len(perm_paths[perm]) < shortest:
@@ -706,9 +698,9 @@ class MyRob(CRobLinkAngs):
                 shortest_path_unk = perm_paths_unk[perm]
                 shortest_permutation_unk = perm
 
-        #print("Shortest path with known map {} with len {} and permutation {}".format(shortest_path, shortest, shortest_permutation))
+        # print("Shortest path with known map {} with len {} and permutation {}".format(shortest_path, shortest, shortest_permutation))
 
-        #print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
+        # print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
 
         if shortest_path == shortest_path_unk:
             self.shortest_path_found = True
@@ -757,22 +749,26 @@ class Map():
 host = "localhost"
 pos = 1
 mapc = None
+rob_name = "pClient1"
+filename = "pathing.out"
 
 for i in range(1, len(sys.argv), 2):
     if (sys.argv[i] == "--host" or sys.argv[i] == "-h") and i != len(sys.argv) - 1:
         host = sys.argv[i + 1]
     elif (sys.argv[i] == "--pos" or sys.argv[i] == "-p") and i != len(sys.argv) - 1:
         pos = int(sys.argv[i + 1])
-    elif (sys.argv[i] == "--robname" or sys.argv[i] == "-p") and i != len(sys.argv) - 1:
+    elif (sys.argv[i] == "--robname" or sys.argv[i] == "-r") and i != len(sys.argv) - 1:
         rob_name = sys.argv[i + 1]
     elif (sys.argv[i] == "--map" or sys.argv[i] == "-m") and i != len(sys.argv) - 1:
         mapc = Map(sys.argv[i + 1])
+    elif (sys.argv[i] == "--file" or sys.argv[i] == "-f") and i != len(sys.argv) - 1:
+        filename = sys.argv[i + 1]
     else:
         print("Unkown argument", sys.argv[i])
         quit()
 
 if __name__ == '__main__':
-    rob = MyRob('toms', pos, [0.0, 90.0, -90.0, 180.0], host)
+    rob = MyRob(rob_name, pos, [0.0, 90.0, -90.0, 180.0], host, filename)
     if mapc != None:
         rob.setMap(mapc.labMap)
         rob.printMap()
