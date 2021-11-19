@@ -122,9 +122,14 @@ class MyRob(CRobLinkAngs):
                 self.wander()
 
     def wander(self):
+        if (-1, -1) not in self.beacons_positions and not self.shortest_path_found:
+            self.calculate_beacon_paths()
+            if self.shortest_path_found:
+                self.state = "end"
+                return
         if self.state == "map":
             print("I am mapping")
-            
+
             # check if it is on top of a beacon
             if self.measures.ground != -1:
                 #saving the beacon location
@@ -137,6 +142,7 @@ class MyRob(CRobLinkAngs):
                 print(self.beacons_positions[i]) 
 
             self.map()
+            #self.infer_blocked()
 
             if self.path is not None and self.path != []:
                 self.state = "go_with_purpose"
@@ -219,7 +225,7 @@ class MyRob(CRobLinkAngs):
                     if adjacent[0] == target:
                         return adjacent[1]
                 else:
-                    if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'F' \
+                    if adjacent[0] not in self.visited and self.mymap[adjacent[0][1]][adjacent[0][0]] == 'X' \
                             and self.mymap[adjacent[2][1]][adjacent[2][0]] != "|" and self.mymap[adjacent[2][1]][
                         adjacent[2][0]] != "-":
                         self.target_locked = adjacent[1]
@@ -291,11 +297,7 @@ class MyRob(CRobLinkAngs):
             self.target_locked = None
 
     def go(self):
-        if (-1, -1) not in self.beacons_positions:
-            self.calculate_beacon_paths()
-            if self.shortest_path_found:
-                self.state = "end"
-                return
+
         if self.state == "go_with_purpose":
             inertia_comp = 1.55
         else:
@@ -577,18 +579,20 @@ class MyRob(CRobLinkAngs):
             f.write("{} {}\n".format(x,y))
 
 
-    def infer_deadend(self):
+    def infer_blocked(self):
         for row in range(1, len(self.mymap), 2):
             for i,cell in enumerate(self.mymap[row]):
                 wall_counter = 0
-                if cell == "X":
-                    walls = [self.mymap[row][i-1], self.mymap[row][i+1], self.mymap[row-1][i], self.mymap[row+1][i]]
-                    for wall in walls:
-                        if wall in ("|", "-"):
-                            wall_counter+=1
-                    if wall_counter == 3:
-                        self.visited.add((i, row))
-                        self.not_visited.discard((i,row))
+                if cell == " ":
+                    try:
+                        walls = [self.mymap[row][i-1], self.mymap[row][i+1], self.mymap[row-1][i], self.mymap[row+1][i]]
+                        for wall in walls:
+                            if wall in ("|", "-"):
+                                wall_counter+=1
+                        if wall_counter == 4:
+                            self.mymap[row][i] = "*"
+                    except:
+                        continue
 
     def dijkstra(self, graph, start):
         distances = {x: float('inf') for x in graph.keys()}
@@ -632,14 +636,15 @@ class MyRob(CRobLinkAngs):
         new_graph = copy.deepcopy(self.graph)
         for row in range(1, len(self.mymap), 2):
             for i, cell in enumerate(self.mymap[row]):
-                possible_places = [((i + 2, row),1), ((i - 2, row),1), ((i, row + 2),1), ((i, row - 2),1)]
+                possible_places = [((i + 2, row),1,(i+1, row)), ((i - 2, row),1,(i-1, row)), ((i, row + 2),1,(i, row+1)), ((i, row - 2),1,(i, row-1))]
                 if self.mymap[row][i] == ' ':
                     for place in possible_places:
                         try:
                             temp = self.mymap[place[0][1]][place[0][0]]
                             if place[0][0] < 0 or place[0][1] < 0:
                                 continue
-                            new_graph.setdefault((i, row),[]).append(((place[0][0],place[0][1]),1))
+                            if self.mymap[place[2][1]][place[2][0]] != "|" and self.mymap[place[2][1]][place[2][0]] != "-":
+                                new_graph.setdefault((i, row),[]).append(((place[0][0],place[0][1]),1))
                         except:
                             #print("except {}".format(place))
                             continue
@@ -650,7 +655,9 @@ class MyRob(CRobLinkAngs):
                                 temp = self.mymap[place[0][1]][place[0][0]]
                                 if place[0][0] < 0 or place[0][1] < 0:
                                     continue
-                                new_graph.setdefault((i, row), []).append(((place[0][0], place[0][1]), 1))
+                                if self.mymap[place[2][1]][place[2][0]] != "|" and self.mymap[place[2][1]][
+                                    place[2][0]] != "-":
+                                    new_graph.setdefault((i, row), []).append(((place[0][0], place[0][1]), 1))
                             except:
                                 #print("except {}".format(place))
                                 continue
@@ -679,7 +686,7 @@ class MyRob(CRobLinkAngs):
             perm_path_unk = []
             perm_list = list(perm)
             perm_list.append(perm[0])  # create closed path
-            print("PERM {}".format(perm))
+            #print("PERM {}".format(perm))
             for i,beacon in enumerate(perm_list):
                 if i <= len(perm_list)-2:
                     perm_path.append(self.get_path(perm_list[i], perm_list[i+1], paths[beacon]))
@@ -699,13 +706,14 @@ class MyRob(CRobLinkAngs):
                 shortest_path_unk = perm_paths_unk[perm]
                 shortest_permutation_unk = perm
 
-        print("Shortest path with known map {} with len {} and permutation {}".format(shortest_path, shortest, shortest_permutation))
+        #print("Shortest path with known map {} with len {} and permutation {}".format(shortest_path, shortest, shortest_permutation))
 
-        print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
+        #print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
 
         if shortest_path == shortest_path_unk:
             self.shortest_path_found = True
             self.shortest_path = shortest_path
+            print("SHORTEST PATH FOUND")
 
         return
 
