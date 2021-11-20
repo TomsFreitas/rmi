@@ -1,7 +1,7 @@
 import copy
 import sys
 from collections import deque
-
+from math import *
 from croblink import *
 import xml.etree.ElementTree as ET
 import pprint
@@ -246,18 +246,18 @@ class MyRob(CRobLinkAngs):
         # self.infer_deadend()
 
         for node in self.not_visited:
-            if node == (27, 13):
-                continue
-            path = self.calculate_path(self.graph, (self.map_location_x, self.map_location_y), node)
+            _, path = self.dijkstra(self.graph, (self.map_location_x, self.map_location_y))
+            path = list(self.get_path((self.map_location_x, self.map_location_y), node, path))
             if len(path) < min:
                 self.target_location = node
-                self.path = path[1:]
+                self.path = path
                 min = len(path)
+
         if self.target_location is None:
-            self.state = "end"
+            self.state = "map"
             return
+
         print("I am travelling to {} using path {}".format(self.target_location, self.path))
-        print(self.mymap[15][27])
 
     def calculate_path(self, graph, start, end, path=[]):
         path = path + [start]
@@ -388,6 +388,7 @@ class MyRob(CRobLinkAngs):
         self.driveMotors(0.00, 0.00)
 
     def map(self):
+        self.visited.add((self.map_location_x, self.map_location_y))
         if self.orientation == orientation.Right:
             if self.current_measures[0] > 1:
                 self.mymap[self.map_location_y][self.map_location_x + 1] = "|"
@@ -543,23 +544,26 @@ class MyRob(CRobLinkAngs):
         return
 
     def next(self):
-        if self.orientation == orientation.Right:
-            return self.mymap[self.map_location_y][self.map_location_x + 2] == "X" and \
-                   self.mymap[self.map_location_y][self.map_location_x + 1] != "|" and \
-                   (self.map_location_x + 2, self.map_location_y) not in self.visited
+        try:
+            if self.orientation == orientation.Right:
+                return self.mymap[self.map_location_y][self.map_location_x + 2] == "X" and \
+                       self.mymap[self.map_location_y][self.map_location_x + 1] != "|" and \
+                       (self.map_location_x + 2, self.map_location_y) not in self.visited
 
-        elif self.orientation == orientation.Up:
-            return self.mymap[self.map_location_y - 2][self.map_location_x] == "X" and \
-                   self.mymap[self.map_location_y - 1][self.map_location_x] != "-" and \
-                   (self.map_location_x, self.map_location_y - 2) not in self.visited
-        elif self.orientation == orientation.Left:
-            return self.mymap[self.map_location_y][self.map_location_x - 2] == "X" and \
-                   self.mymap[self.map_location_y][self.map_location_x - 1] != "|" and \
-                   (self.map_location_x - 2, self.map_location_y) not in self.visited
-        else:
-            return self.mymap[self.map_location_y + 2][self.map_location_x] == "X" and \
-                   self.mymap[self.map_location_y + 1][self.map_location_x] != "-" and \
-                   (self.map_location_x, self.map_location_y + 2) not in self.visited
+            elif self.orientation == orientation.Up:
+                return self.mymap[self.map_location_y - 2][self.map_location_x] == "X" and \
+                       self.mymap[self.map_location_y - 1][self.map_location_x] != "-" and \
+                       (self.map_location_x, self.map_location_y - 2) not in self.visited
+            elif self.orientation == orientation.Left:
+                return self.mymap[self.map_location_y][self.map_location_x - 2] == "X" and \
+                       self.mymap[self.map_location_y][self.map_location_x - 1] != "|" and \
+                       (self.map_location_x - 2, self.map_location_y) not in self.visited
+            else:
+                return self.mymap[self.map_location_y + 2][self.map_location_x] == "X" and \
+                       self.mymap[self.map_location_y + 1][self.map_location_x] != "-" and \
+                       (self.map_location_x, self.map_location_y + 2) not in self.visited
+        except:
+            return False
 
     def create_pathing_file(self):
         self.mymap[13][27] = "I"
@@ -670,22 +674,28 @@ class MyRob(CRobLinkAngs):
         # calculate every permutation of closed paths beginning at 27,13
         perms = []
         for perm in itertools.permutations(self.beacons_positions):
-            if perm <= perm[::-1] and perm[0] == (27, 13):
+            #if perm <= perm[::-1]:
+            if perm[0] == (27,13):
                 perms.append(perm)
+
+
+
 
         # for each permutation, calculate path size
         for perm in perms:
+            print(perm[0])
             perm_path = []
             perm_path_unk = []
             perm_list = list(perm)
             perm_list.append(perm[0])  # create closed path
-            # print("PERM {}".format(perm))
+            print("PERM {}".format(perm))
             for i, beacon in enumerate(perm_list):
                 if i <= len(perm_list) - 2:
                     perm_path.append(self.get_path(perm_list[i], perm_list[i + 1], paths[beacon]))
                     perm_path_unk.append(self.get_path(perm_list[i], perm_list[i + 1], paths_unk[beacon]))
             perm_paths[perm] = list(itertools.chain(*perm_path))
             perm_paths_unk[perm] = list(itertools.chain(*perm_path_unk))
+
 
         for perm in perm_paths.keys():
             if len(perm_paths[perm]) < shortest:
@@ -698,9 +708,9 @@ class MyRob(CRobLinkAngs):
                 shortest_path_unk = perm_paths_unk[perm]
                 shortest_permutation_unk = perm
 
-        # print("Shortest path with known map {} with len {} and permutation {}".format(shortest_path, shortest, shortest_permutation))
+        print("Shortest path with known map {} with len {} and permutation {}".format(shortest_path, shortest, shortest_permutation))
 
-        # print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
+        print("Shortest path with unknown map {} with len {} and permutation {}".format(shortest_path_unk, shortest_unk, shortest_permutation_unk))
 
         if shortest_path == shortest_path_unk:
             self.shortest_path_found = True
