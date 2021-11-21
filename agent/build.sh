@@ -14,5 +14,7 @@
 
 # Possibility for python agents
 # nothing
-
+echo "Corrida de frutas"
+echo "A pêra está a frente"
+echo "Mas do nada a uva passa"
 
