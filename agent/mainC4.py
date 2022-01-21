@@ -334,7 +334,7 @@ class MyRob(CRobLinkAngs):
         # print(target_heading, self.measures.compass, self.target_locked)
         factor = self.get_rotation_factor(soft_rotation=False, target=target_heading)
         # print(factor)
-        if not (target_heading - 1 <= median(self.heading_buffer) <= target_heading + 1):
+        if not (target_heading - 2 <= median(self.heading_buffer) <= target_heading + 2):
             print("{},{}".format(target_heading, self.estimated))
             self.move(0, 0.025, 0, factor, rotate=True)
             #self.simple_rotate(0.04)
