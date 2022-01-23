@@ -650,6 +650,8 @@ class MyRob(CRobLinkAngs):
 
     def create_mapping_file(self):
         self.mymap[13][27] = "I"
+        for i,beacon in enumerate(self.beacons_positions):
+            self.mymap[beacon[1]][beacon[0]] = i
         f = open(self.filename,"w")
 
         for row in self.mymap:
