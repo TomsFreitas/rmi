@@ -353,7 +353,7 @@ class MyRob(CRobLinkAngs):
             inertia_comp = 1.65
             speed = 0.15
         else:
-            inertia_comp = 1.70
+            inertia_comp = 1.74
             speed = 0.15
         factor = self.get_rotation_factor()
 
